@@ -1,18 +1,84 @@
 version: '3.8'
 
 # Database stack profile
-include:
-  - ../base/docker-compose.yml
-  - ../services/postgresql.yml
-  - ../services/redis.yml
+networks:
+  infra-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
-# Override atau tambahan konfigurasi untuk database stack
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Base service untuk shared configurations
+x-common-variables: &common-variables
+  restart: unless-stopped
+  networks:
+    - infra-network
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgresql:
+    <<: *common-variables
+    image: postgres:15.4-alpine
+    container_name: infra-postgresql
     environment:
       POSTGRES_DB: ${DB_NAME:-appdb}
       POSTGRES_USER: ${DB_USER:-appuser}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_123}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-appuser} -d ${DB_NAME:-appdb}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
 
   redis:
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secure_123}
+    <<: *common-variables
+    image: redis:7.2-alpine
+    container_name: infra-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secure_123} --maxmemory 128mb --maxmemory-policy allkeys-lru --save 900 1 --save 300 10
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging

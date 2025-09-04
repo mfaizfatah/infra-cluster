@@ -1,24 +1,155 @@
 version: '3.8'
 
 # Complete monitoring stack profile dengan system monitoring
-include:
-  - ../base/docker-compose.yml
-  - ../services/prometheus.yml
-  - ../services/grafana.yml
-  - ../services/monitoring-exporters.yml
+networks:
+  infra-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
-# Override untuk monitoring stack lengkap
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# Base service untuk shared configurations
+x-common-variables: &common-variables
+  restart: unless-stopped
+  networks:
+    - infra-network
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   prometheus:
-    environment:
-      PROMETHEUS_RETENTION: ${MONITORING_RETENTION:-7d}
+    <<: *common-variables
+    image: prom/prometheus:v2.47.0
+    container_name: infra-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-7d}'
+      - '--storage.tsdb.retention.size=512MB'
+      - '--web.enable-lifecycle'
+      - '--query.max-concurrency=4'
+      - '--query.max-samples=50000000'
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - prometheus_data:/prometheus
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./config/rules:/etc/prometheus/rules:ro
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
 
   grafana:
+    <<: *common-variables
+    image: grafana/grafana:10.1.0
+    container_name: infra-grafana
     environment:
-      GF_SECURITY_ADMIN_USER: ${MONITORING_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${MONITORING_PASSWORD:-admin123}
-      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/provisioning/dashboards/system-overview.json
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin123}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: ${GRAFANA_PLUGINS:-}
+      GF_DATABASE_WAL: "false"
+      GF_LOG_LEVEL: "warn"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: '0.3'
+        reservations:
+          memory: 96M
+          cpus: '0.15'
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging: *default-logging
+
+  node-exporter:
+    <<: *common-variables
+    image: prom/node-exporter:v1.6.1
+    container_name: infra-node-exporter
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.textfile.directory=/var/lib/node_exporter/textfile_collector'
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /var/lib/node_exporter/textfile_collector:/var/lib/node_exporter/textfile_collector:ro
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.1'
+        reservations:
+          memory: 32M
+          cpus: '0.05'
+    pid: host
+    logging: *default-logging
+
+  cadvisor:
+    <<: *common-variables
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    container_name: infra-cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.2'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    privileged: true
+    devices:
+      - /dev/kmsg
+    logging: *default-logging

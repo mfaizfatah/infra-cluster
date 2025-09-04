@@ -15,8 +15,6 @@ services:
       - '--web.enable-lifecycle'
       - '--query.max-concurrency=4'
       - '--query.max-samples=50000000'
-    ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - prometheus_data:/prometheus
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro

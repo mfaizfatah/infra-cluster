@@ -39,8 +39,6 @@ services:
       - '--web.enable-lifecycle'
       - '--query.max-concurrency=4'
       - '--query.max-samples=50000000'
-    ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - prometheus_data:/prometheus
       - /home/mfaizfatah-nlite/infra-cluster/docker/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -109,8 +107,6 @@ services:
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
       - '--collector.textfile.directory=/var/lib/node_exporter/textfile_collector'
-    ports:
-      - "9100:9100"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -131,8 +127,6 @@ services:
     <<: *common-variables
     image: gcr.io/cadvisor/cadvisor:v0.47.0
     container_name: infra-cadvisor
-    ports:
-      - "8080:8080"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro

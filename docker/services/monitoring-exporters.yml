@@ -1,5 +1,31 @@
 version: '3.8'
 
+# Monitoring exporters services for system monitoring
+networks:
+  infra-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Base service untuk shared configurations
+x-common-variables: &common-variables
+  restart: unless-stopped
+  networks:
+    - infra-network
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   node-exporter:
     <<: *common-variables
@@ -36,7 +62,8 @@ services:
     image: prometheuscommunity/postgres-exporter:v0.13.2
     container_name: infra-postgres-exporter
     environment:
-      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-changeme123}@postgresql:5432/${POSTGRES_DB:-myapp}?sslmode=disable"
+      # Support both regular and database profile env vars
+      DATA_SOURCE_NAME: "postgresql://${DB_USER:-${POSTGRES_USER:-postgres}}:${DB_PASSWORD:-${POSTGRES_PASSWORD:-changeme123}}@postgresql:5432/${DB_NAME:-${POSTGRES_DB:-myapp}}?sslmode=disable"
     depends_on:
       - postgresql
     # Resource limits untuk VPS 1GB RAM

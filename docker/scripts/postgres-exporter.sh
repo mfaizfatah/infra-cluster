@@ -15,9 +15,27 @@ NC='\033[0m'
 
 echo -e "${BLUE}🐘 PostgreSQL Exporter Management${NC}"
 
+cleanup_orphans() {
+    echo -e "${YELLOW}Cleaning up orphaned containers and networks...${NC}"
+    cd "$DOCKER_DIR"
+
+    # Stop and remove orphaned containers
+    docker stop infra-grafana infra-prometheus infra-node-exporter infra-cadvisor 2>/dev/null || true
+    docker rm infra-grafana infra-prometheus infra-node-exporter infra-cadvisor 2>/dev/null || true
+
+    # Clean up networks
+    docker network rm profiles_infra-network services_infra-network 2>/dev/null || true
+    docker network prune -f
+
+    echo -e "${GREEN}✅ Cleanup completed${NC}"
+}
+
 case "${1:-help}" in
     start)
         echo -e "${GREEN}Starting PostgreSQL + PostgreSQL Exporter...${NC}"
+
+        # Cleanup orphans first
+        cleanup_orphans
 
         # Change to docker directory
         cd "$DOCKER_DIR"
@@ -30,15 +48,18 @@ case "${1:-help}" in
         echo -e "${YELLOW}2. Waiting for PostgreSQL to be ready...${NC}"
         sleep 15
 
-        # Start postgres-exporter (without depends_on)
+        # Start postgres-exporter using the same network context
         echo -e "${YELLOW}3. Starting PostgreSQL Exporter...${NC}"
-        docker-compose -f services/monitoring-exporters.yml up -d postgres-exporter
+        docker-compose -f profiles/database.yml -f services/monitoring-exporters.yml up -d postgres-exporter
 
         echo -e "${GREEN}✅ PostgreSQL Exporter started successfully!${NC}"
         ;;
 
     start-with-database)
         echo -e "${GREEN}Starting complete database stack with monitoring...${NC}"
+
+        # Cleanup orphans first
+        cleanup_orphans
 
         cd "$DOCKER_DIR"
 
@@ -47,6 +68,10 @@ case "${1:-help}" in
         docker-compose -f profiles/database.yml -f services/monitoring-exporters.yml up -d
 
         echo -e "${GREEN}✅ Database stack with monitoring started!${NC}"
+        ;;
+
+    cleanup)
+        cleanup_orphans
         ;;
 
     stop)
@@ -98,17 +123,18 @@ case "${1:-help}" in
         ;;
 
     help|*)
-        echo -e "${BLUE}Usage: $0 {start|start-with-database|stop|status|logs|metrics|connect-test}${NC}"
+        echo -e "${BLUE}Usage: $0 {start|start-with-database|cleanup|stop|status|logs|metrics|connect-test}${NC}"
         echo ""
         echo -e "${YELLOW}Commands:${NC}"
         echo "  start               - Start PostgreSQL + PostgreSQL Exporter (sequential)"
         echo "  start-with-database - Start database stack + exporters together"
+        echo "  cleanup             - Clean up orphaned containers and networks"
         echo "  stop                - Stop PostgreSQL Exporter"
         echo "  status              - Check if PostgreSQL Exporter is running"
         echo "  logs                - View PostgreSQL Exporter logs"
         echo "  metrics             - Test metrics endpoint"
         echo "  connect-test        - Test database connection"
         echo ""
-        echo -e "${YELLOW}Note:${NC} PostgreSQL must be running before starting postgres-exporter"
+        echo -e "${YELLOW}Note:${NC} Use cleanup if you encounter network conflicts"
         ;;
 esac

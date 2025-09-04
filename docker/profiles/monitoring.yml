@@ -45,8 +45,8 @@ services:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - prometheus_data:/prometheus
-      - ../config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ../config/rules:/etc/prometheus/rules:ro
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/rules:/etc/prometheus/rules:ro
     deploy:
       resources:
         limits:
@@ -81,8 +81,8 @@ services:
       - "${GRAFANA_PORT:-3000}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ../config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ../config/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources:ro
     depends_on:
       - prometheus
     deploy:

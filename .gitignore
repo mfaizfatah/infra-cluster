@@ -23,6 +23,11 @@ temp/
 .DS_Store
 Thumbs.db
 
+# Environment variables (sensitive data)
+.env
+.env.*
+!.env.example
+
 # Secrets (jangan commit!)
 secrets/
 *.key

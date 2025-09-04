@@ -46,13 +46,23 @@ start_profile() {
     fi
 
     echo -e "${GREEN}Starting profile: $profile${NC}"
+    echo -e "${BLUE}Working directory: $DOCKER_DIR${NC}"
+    echo -e "${BLUE}Profile file: $profile_file${NC}"
 
-    # Use absolute paths untuk avoid path issues
-    local working_dir="$DOCKER_DIR"
-    local compose_file="$working_dir/profiles/${profile}.yml"
+    # Debug: show config file existence
+    if [ -f "$DOCKER_DIR/config/prometheus.yml" ]; then
+        echo -e "${GREEN}✅ prometheus.yml found${NC}"
+    else
+        echo -e "${RED}❌ prometheus.yml NOT found${NC}"
+    fi
 
-    # Change to docker directory and run with proper working directory
-    (cd "$working_dir" && docker-compose -f "profiles/${profile}.yml" up -d)
+    # Use absolute paths to avoid any confusion
+    local compose_cmd="docker-compose"
+    local compose_args="-f $profile_file"
+
+    # Change to docker directory and run with explicit working directory
+    echo -e "${BLUE}Executing: cd $DOCKER_DIR && $compose_cmd $compose_args up -d${NC}"
+    (cd "$DOCKER_DIR" && eval "$compose_cmd $compose_args up -d")
 }
 
 start_services() {

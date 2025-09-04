@@ -6,8 +6,11 @@ PostgreSQL Exporter untuk mengumpulkan metrics dari database PostgreSQL dan memo
 
 ### 1. **Menggunakan Helper Script (Recommended)**
 ```bash
-# Start PostgreSQL + PostgreSQL Exporter
+# Option 1: Start PostgreSQL + PostgreSQL Exporter (sequential)
 ./docker/scripts/postgres-exporter.sh start
+
+# Option 2: Start database stack + exporters together (recommended)
+./docker/scripts/postgres-exporter.sh start-with-database
 
 # Check status
 ./docker/scripts/postgres-exporter.sh status
@@ -17,21 +20,32 @@ PostgreSQL Exporter untuk mengumpulkan metrics dari database PostgreSQL dan memo
 
 # Test metrics
 ./docker/scripts/postgres-exporter.sh metrics
+
+# Test database connection
+./docker/scripts/postgres-exporter.sh connect-test
 ```
 
-### 2. **Manual dengan Docker Compose**
+### 2. **Manual dengan Docker Compose (Fixed)**
 ```bash
-# Start PostgreSQL database first
+# Option A: Start PostgreSQL first, then exporter
 ./docker/scripts/start.sh database
-
-# Start postgres-exporter
+# Wait for PostgreSQL to be ready (15-30 seconds)
 docker-compose -f docker/services/monitoring-exporters.yml up -d postgres-exporter
+
+# Option B: Start both together using multiple compose files
+docker-compose -f docker/profiles/database.yml -f docker/services/monitoring-exporters.yml up -d
 ```
 
 ### 3. **Dengan Monitoring Stack Lengkap**
 ```bash
-# Start monitoring stack (termasuk postgres-exporter)
+# Start monitoring stack (includes postgres-exporter automatically)
 ./docker/scripts/start.sh monitoring
+```
+
+### 4. **Individual Exporter Only (PostgreSQL must be running)**
+```bash
+# Start only postgres-exporter (PostgreSQL must already be running)
+docker-compose -f docker/services/monitoring-exporters.yml up -d postgres-exporter
 ```
 
 ## 🔧 **Konfigurasi Environment Variables**

@@ -28,13 +28,25 @@ case "${1:-help}" in
 
         # Wait for PostgreSQL to be ready
         echo -e "${YELLOW}2. Waiting for PostgreSQL to be ready...${NC}"
-        sleep 10
+        sleep 15
 
-        # Start postgres-exporter
+        # Start postgres-exporter (without depends_on)
         echo -e "${YELLOW}3. Starting PostgreSQL Exporter...${NC}"
-        docker-compose -f base/docker-compose.yml -f services/monitoring-exporters.yml up -d postgres-exporter
+        docker-compose -f services/monitoring-exporters.yml up -d postgres-exporter
 
         echo -e "${GREEN}✅ PostgreSQL Exporter started successfully!${NC}"
+        ;;
+
+    start-with-database)
+        echo -e "${GREEN}Starting complete database stack with monitoring...${NC}"
+
+        cd "$DOCKER_DIR"
+
+        # Start database stack and exporters together using multiple compose files
+        echo -e "${YELLOW}Starting database + postgres-exporter...${NC}"
+        docker-compose -f profiles/database.yml -f services/monitoring-exporters.yml up -d
+
+        echo -e "${GREEN}✅ Database stack with monitoring started!${NC}"
         ;;
 
     stop)
@@ -63,7 +75,7 @@ case "${1:-help}" in
         echo -e "${BLUE}Testing PostgreSQL Exporter Metrics:${NC}"
         if docker ps | grep -q infra-postgres-exporter; then
             echo -e "${GREEN}Fetching metrics...${NC}"
-            docker exec infra-postgres-exporter wget -qO- http://localhost:9187/metrics | head -20
+            docker exec infra-postgres-exporter wget -qO- http://localhost:9187/metrics 2>/dev/null | head -20
             echo -e "${BLUE}... (showing first 20 lines)${NC}"
         else
             echo -e "${RED}❌ PostgreSQL Exporter is not running${NC}"
@@ -72,22 +84,31 @@ case "${1:-help}" in
 
     connect-test)
         echo -e "${BLUE}Testing PostgreSQL Connection:${NC}"
-        if docker ps | grep -q infra-postgresql; then
-            docker exec infra-postgres-exporter wget -qO- http://localhost:9187/metrics | grep -E "(pg_up|pg_database_size_bytes)" || echo "Connection issue detected"
+        if docker ps | grep -q infra-postgres-exporter; then
+            echo -e "${YELLOW}Testing metrics endpoint...${NC}"
+            if docker exec infra-postgres-exporter wget -qO- http://localhost:9187/metrics 2>/dev/null | grep -q "pg_up"; then
+                PG_UP=$(docker exec infra-postgres-exporter wget -qO- http://localhost:9187/metrics 2>/dev/null | grep "pg_up" | head -1)
+                echo -e "${GREEN}✅ Connection test: $PG_UP${NC}"
+            else
+                echo -e "${RED}❌ Connection test failed${NC}"
+            fi
         else
-            echo -e "${RED}❌ PostgreSQL database is not running${NC}"
+            echo -e "${RED}❌ PostgreSQL Exporter is not running${NC}"
         fi
         ;;
 
     help|*)
-        echo -e "${BLUE}Usage: $0 {start|stop|status|logs|metrics|connect-test}${NC}"
+        echo -e "${BLUE}Usage: $0 {start|start-with-database|stop|status|logs|metrics|connect-test}${NC}"
         echo ""
         echo -e "${YELLOW}Commands:${NC}"
-        echo "  start        - Start PostgreSQL + PostgreSQL Exporter"
-        echo "  stop         - Stop PostgreSQL Exporter"
-        echo "  status       - Check if PostgreSQL Exporter is running"
-        echo "  logs         - View PostgreSQL Exporter logs"
-        echo "  metrics      - Test metrics endpoint"
-        echo "  connect-test - Test database connection"
+        echo "  start               - Start PostgreSQL + PostgreSQL Exporter (sequential)"
+        echo "  start-with-database - Start database stack + exporters together"
+        echo "  stop                - Stop PostgreSQL Exporter"
+        echo "  status              - Check if PostgreSQL Exporter is running"
+        echo "  logs                - View PostgreSQL Exporter logs"
+        echo "  metrics             - Test metrics endpoint"
+        echo "  connect-test        - Test database connection"
+        echo ""
+        echo -e "${YELLOW}Note:${NC} PostgreSQL must be running before starting postgres-exporter"
         ;;
 esac

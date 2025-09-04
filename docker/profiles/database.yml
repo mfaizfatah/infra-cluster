@@ -38,7 +38,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - /home/mfaizfatah-nlite/infra-cluster/docker/config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     deploy:
       resources:
         limits:
@@ -64,7 +64,7 @@ services:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
-      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - /home/mfaizfatah-nlite/infra-cluster/docker/config/redis.conf:/usr/local/etc/redis/redis.conf:ro
     deploy:
       resources:
         limits:

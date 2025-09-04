@@ -46,9 +46,13 @@ start_profile() {
     fi
 
     echo -e "${GREEN}Starting profile: $profile${NC}"
-    # Change to docker directory untuk path relatif yang benar
-    cd "$DOCKER_DIR"
-    docker-compose -f "profiles/${profile}.yml" up -d
+
+    # Use absolute paths untuk avoid path issues
+    local working_dir="$DOCKER_DIR"
+    local compose_file="$working_dir/profiles/${profile}.yml"
+
+    # Change to docker directory and run with proper working directory
+    (cd "$working_dir" && docker-compose -f "profiles/${profile}.yml" up -d)
 }
 
 start_services() {

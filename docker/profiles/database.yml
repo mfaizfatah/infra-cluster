@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Database stack profile
 networks:
   infra-network:

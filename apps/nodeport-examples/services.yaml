@@ -1,0 +1,32 @@
+# Example: PostgreSQL dengan NodePort untuk akses eksternal
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-nodeport
+  namespace: apps
+  labels:
+    app: postgresql
+spec:
+  type: NodePort
+  ports:
+  - port: 5432
+    targetPort: 5432
+    nodePort: 30432  # Akses dari luar cluster via <VPS-IP>:30432
+  selector:
+    app: postgresql
+---
+# Example: Monitoring dengan NodePort
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-nodeport
+  namespace: monitoring
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30300  # Akses Grafana via <VPS-IP>:30300
+  selector:
+    app.kubernetes.io/name: grafana
+

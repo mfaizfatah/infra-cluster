@@ -1,0 +1,30 @@
+# Docker images
+*.tar
+
+# Kubernetes
+*.kubeconfig
+kubeconfig
+
+# Helm
+charts/*.tgz
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets (jangan commit!)
+secrets/
+*.key
+*.pem
+*.crt

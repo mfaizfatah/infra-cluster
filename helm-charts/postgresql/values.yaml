@@ -1,0 +1,63 @@
+# Default values for postgresql
+replicaCount: 1
+
+image:
+  repository: postgres
+  pullPolicy: IfNotPresent
+  tag: "15.4-alpine"
+
+# PostgreSQL Configuration
+postgresql:
+  database: "myapp"
+  username: "postgres"
+  # Password akan di-generate otomatis atau bisa di-set manual
+  existingSecret: ""
+  secretKey: "postgresql-password"
+
+# Persistence
+persistence:
+  enabled: true
+  storageClass: "local-path"
+  size: 5Gi
+  mountPath: /var/lib/postgresql/data
+
+service:
+  type: ClusterIP
+  port: 5432
+
+# Resource limits - dioptimalkan untuk VPS 1GB RAM
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# PostgreSQL specific settings untuk memory kecil
+postgresqlConfig:
+  shared_buffers: "32MB"
+  effective_cache_size: "128MB"
+  maintenance_work_mem: "16MB"
+  work_mem: "4MB"
+  max_connections: "20"
+
+# Environment variables
+env:
+  - name: POSTGRES_DB
+    value: "myapp"
+  - name: POSTGRES_USER
+    value: "postgres"
+  - name: PGDATA
+    value: "/var/lib/postgresql/data/pgdata"
+
+# Node selector, tolerations and affinity
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Security context
+securityContext:
+  runAsUser: 999
+  runAsGroup: 999
+  fsGroup: 999

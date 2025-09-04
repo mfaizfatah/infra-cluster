@@ -1,0 +1,28 @@
+version: '3.8'
+
+# Full stack profile - semua services
+include:
+  - ../base/docker-compose.yml
+  - ../services/postgresql.yml
+  - ../services/redis.yml
+  - ../services/prometheus.yml
+  - ../services/grafana.yml
+  - ../services/nginx.yml
+
+# Override untuk full stack
+services:
+  postgresql:
+    environment:
+      POSTGRES_DB: ${FULL_DB_NAME:-fullstack_db}
+      POSTGRES_USER: ${FULL_DB_USER:-fullstack_user}
+      POSTGRES_PASSWORD: ${FULL_DB_PASSWORD:-fullstack_secure_123}
+
+  nginx:
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - postgresql
+      - redis
+      - prometheus
+      - grafana

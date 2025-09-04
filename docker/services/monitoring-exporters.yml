@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  node-exporter:
+    <<: *common-variables
+    image: prom/node-exporter:v1.6.1
+    container_name: infra-node-exporter
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.textfile.directory=/var/lib/node_exporter/textfile_collector'
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /var/lib/node_exporter/textfile_collector:/var/lib/node_exporter/textfile_collector:ro
+    # Resource limits untuk VPS 1GB RAM
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.1'
+        reservations:
+          memory: 32M
+          cpus: '0.05'
+    pid: host
+    restart: unless-stopped
+    logging: *default-logging
+    labels:
+      - "traefik.enable=false"
+
+  postgres-exporter:
+    <<: *common-variables
+    image: prometheuscommunity/postgres-exporter:v0.13.2
+    container_name: infra-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-changeme123}@postgresql:5432/${POSTGRES_DB:-myapp}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgresql
+    # Resource limits untuk VPS 1GB RAM
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+          cpus: '0.1'
+        reservations:
+          memory: 16M
+          cpus: '0.05'
+    logging: *default-logging
+    labels:
+      - "traefik.enable=false"
+
+  redis-exporter:
+    <<: *common-variables
+    image: oliver006/redis_exporter:v1.53.0
+    container_name: infra-redis-exporter
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-redis123}"
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+    # Resource limits untuk VPS 1GB RAM
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+          cpus: '0.1'
+        reservations:
+          memory: 16M
+          cpus: '0.05'
+    logging: *default-logging
+    labels:
+      - "traefik.enable=false"
+
+  cadvisor:
+    <<: *common-variables
+    image: gcr.io/cadvisor/cadvisor:v0.47.0
+    container_name: infra-cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    # Resource limits untuk VPS 1GB RAM
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.2'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    privileged: true
+    devices:
+      - /dev/kmsg
+    restart: unless-stopped
+    logging: *default-logging
+    labels:
+      - "traefik.enable=false"

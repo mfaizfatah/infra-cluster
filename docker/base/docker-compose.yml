@@ -1,0 +1,31 @@
+version: '3.8'
+
+# Base configuration dengan network dan volumes
+networks:
+  infra-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Base service untuk shared configurations
+x-common-variables: &common-variables
+  restart: unless-stopped
+  networks:
+    - infra-network
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"

@@ -1,0 +1,150 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "iteration": 170,
+  "links": [],
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "CPU Usage (%)",
+      "gridPos": {"x":0,"y":0,"w":12,"h":8},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults":{"unit":"percent"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU Usage Per Core (%)",
+      "gridPos": {"x":12,"y":0,"w":12,"h":8},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 - (irate(node_cpu_seconds_total{mode=\"idle\"}[5m]) * 100)",
+          "legendFormat": "core {{cpu}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults":{"unit":"percent"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory Usage (%)",
+      "gridPos": {"x":0,"y":8,"w":12,"h":8},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100",
+          "legendFormat": "{{instance}} Used",
+          "refId": "A"
+        },
+        {
+          "expr": "node_memory_SwapUsed_bytes / node_memory_SwapTotal_bytes * 100",
+          "legendFormat": "{{instance}} Swap",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {"defaults":{"unit":"percent"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Disk Usage (%)",
+      "gridPos": {"x":12,"y":8,"w":12,"h":8},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 - (node_filesystem_free_bytes{fstype!~\"tmpfs|aufs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|aufs\"} * 100)",
+          "legendFormat": "{{instance}} - {{mountpoint}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {"defaults":{"unit":"percent"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Network Traffic (Bytes/sec)",
+      "gridPos": {"x":0,"y":16,"w":24,"h":8},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_bytes_total[5m])",
+          "legendFormat": "{{instance}} {{device}} RX",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(node_network_transmit_bytes_total[5m])",
+          "legendFormat": "{{instance}} {{device}} TX",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {"defaults":{"unit":"Bps"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Load Average",
+      "gridPos": {"x":0,"y":24,"w":12,"h":6},
+      "datasource": "Prometheus",
+      "targets": [
+        {"expr":"node_load1","legendFormat":"1m","refId":"A"},
+        {"expr":"node_load5","legendFormat":"5m","refId":"B"},
+        {"expr":"node_load15","legendFormat":"15m","refId":"C"}
+      ],
+      "fieldConfig": {"defaults":{"unit":"none"}}
+    },
+    {
+      "type": "table",
+      "title": "Top Processes by CPU (%)",
+      "gridPos": {"x":12,"y":24,"w":12,"h":6},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "topk(10, rate(node_cpu_seconds_total{mode!=\"idle\"}[5m]))",
+          "legendFormat":"{{instance}} {{comm}}",
+          "refId":"A"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Top Processes by Memory (Bytes)",
+      "gridPos": {"x":12,"y":30,"w":12,"h":6},
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "topk(10, node_memory_Active_bytes)",
+          "legendFormat":"{{instance}} {{comm}}",
+          "refId":"A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 41,
+  "style": "dark",
+  "tags": ["ubuntu","node_exporter","vps","system","full"],
+  "templating": {"list":[]},
+  "time": {"from":"now-1h","to":"now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Ubuntu VPS Full System Monitoring",
+  "version": 1
+}

@@ -15,8 +15,8 @@ Infrastructure configuration for self-hosted VPS deployment. Two independent sta
 `app_network` is defined in `network/` only. Both `postgres/` and `nginx-proxy/` reference it as `external: true`. Always start in this order:
 
 ```bash
-cd network     && docker compose up -d
-cd ../postgres && docker compose up -d
+bash network/setup.sh                        # buat app_network (idempotent)
+cd postgres    && docker compose up -d
 cd ../nginx-proxy && docker compose up -d
 ```
 

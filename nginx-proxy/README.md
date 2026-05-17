@@ -13,17 +13,10 @@ nginx-proxy/
 
 ## Prerequisites
 
-Network `app_network` harus sudah ada (dibuat oleh service postgres). Jalankan postgres terlebih dahulu:
+Network `app_network` harus sudah ada. Jalankan setup network terlebih dahulu:
 
 ```bash
-cd ../postgres && docker compose up -d
-cd ../nginx-proxy
-```
-
-Atau buat network manual jika tidak pakai postgres:
-
-```bash
-docker network create app_network
+bash ../network/setup.sh
 ```
 
 ## Jalankan

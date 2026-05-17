@@ -49,9 +49,7 @@ cd infra-cluster
 Network `app_network` dibuat sekali dan dipakai bersama oleh semua service.
 
 ```bash
-cd network
-docker compose up -d
-cd ..
+bash network/setup.sh
 ```
 
 Verifikasi:
@@ -238,7 +236,7 @@ docker compose restart nginx-proxy
 Folder `network/` belum dijalankan. Buat networknya dulu:
 
 ```bash
-cd network && docker compose up -d
+bash network/setup.sh
 ```
 
 ### Error: port 80/443 already in use

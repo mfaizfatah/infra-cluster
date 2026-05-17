@@ -61,7 +61,7 @@ services:
     container_name: infra-postgres-exporter
     environment:
       # Support both regular and database profile env vars
-      DATA_SOURCE_NAME: "postgresql://${DB_USER:-${POSTGRES_USER:-postgres}}:${DB_PASSWORD:-${POSTGRES_PASSWORD:-changeme123}}@postgresql:5432/${DB_NAME:-${POSTGRES_DB:-myapp}}?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://${DB_USER:-${POSTGRES_USER}}:${DB_PASSWORD:-${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}}@postgresql:5432/${DB_NAME:-${POSTGRES_DB}}?sslmode=disable"
     # Remove depends_on since postgresql service is not in this file
     # depends_on:
     #   - postgresql
@@ -84,7 +84,7 @@ services:
     container_name: infra-redis-exporter
     environment:
       REDIS_ADDR: "redis://redis:6379"
-      REDIS_PASSWORD: "${REDIS_PASSWORD:-redis123}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?REDIS_PASSWORD is not set}"
     # Remove depends_on since redis service is not in this file
     # depends_on:
     #   - redis

@@ -15,7 +15,7 @@ services:
     environment:
       POSTGRES_DB: ${FULL_DB_NAME:-fullstack_db}
       POSTGRES_USER: ${FULL_DB_USER:-fullstack_user}
-      POSTGRES_PASSWORD: ${FULL_DB_PASSWORD:-fullstack_secure_123}
+      POSTGRES_PASSWORD: ${FULL_DB_PASSWORD:?FULL_DB_PASSWORD is not set}
 
   nginx:
     ports:

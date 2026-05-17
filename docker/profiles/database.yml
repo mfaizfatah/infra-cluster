@@ -30,15 +30,15 @@ services:
     image: postgres:15.4-alpine
     container_name: infra-postgresql
     environment:
-      POSTGRES_DB: ${DB_NAME:-appdb}
-      POSTGRES_USER: ${DB_USER:-appuser}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_123}
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is not set}
+      POSTGRES_USER: ${DB_USER:?DB_USER is not set}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - /home/mfaizfatah-nlite/infra-cluster/docker/config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
     deploy:
       resources:
         limits:
@@ -48,7 +48,7 @@ services:
           memory: 128M
           cpus: '0.25'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-appuser} -d ${DB_NAME:-appdb}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -59,12 +59,12 @@ services:
     <<: *common-variables
     image: redis:7.2-alpine
     container_name: infra-redis
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secure_123} --maxmemory 128mb --maxmemory-policy allkeys-lru --save 900 1 --save 300 10
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is not set} --maxmemory 128mb --maxmemory-policy allkeys-lru --save 900 1 --save 300 10
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
-      - /home/mfaizfatah-nlite/infra-cluster/docker/config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
     deploy:
       resources:
         limits:

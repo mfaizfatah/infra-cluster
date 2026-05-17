@@ -4,11 +4,10 @@ metadata:
   name: postgresql-secret
   namespace: apps
 type: Opaque
-data:
-  # IMPORTANT: Change this password before deploying!
-  # Current password is: changeme123
-  # To generate new password: echo -n "yourpassword" | base64
-  postgresql-password: Y2hhbmdlbWUxMjM=
+stringData:
+  # Generate password: openssl rand -base64 24
+  # Lalu jalankan: kubectl apply -f deployment.yaml
+  postgresql-password: GANTI_DENGAN_PASSWORD_KUAT
 ---
 apiVersion: v1
 kind: ConfigMap

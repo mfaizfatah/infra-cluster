@@ -1,0 +1,19 @@
+services:
+  nginx-proxy:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:81:81"   # Admin UI - bind ke localhost, akses via SSH tunnel
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    external: true
+    name: app_network
